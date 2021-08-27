@@ -1,6 +1,3 @@
-/*--------------------------------
--------EXTERNAL RESOURCES---------
---------------------------------*/
 
 // GeoJSON data sources
 var earthquakesURL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson"
@@ -34,48 +31,34 @@ var outdoors = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/
     accessToken: API_KEY
 });
 
-
-/*--------------------------------
---------CREATE BASE MAP-----------
---------------------------------*/
-
-// Create map
 var map = L.map( "map", {
     center: [15, -10],
     zoom: 2,
     layers: [satelliteMap, grayMap, outdoors]
 });
 
-// Define base map layers
 var baseMaps = {
     "Satellite Map": satelliteMap,
     "Grayscale Map": grayMap,
     "Outdoors Map": outdoors
 };
 
-// Define layer groups
 var earthquakes = new L.layerGroup();
 var tectonicplates = new L.layerGroup();
 
-// Create map overlays
 var overlayMaps = {
     "Earthquakes": earthquakes,
     "Tectonic Plates": tectonicplates
 };
 
-// Create a layer control, adding the baseMaps and overlayMaps
 L.control.layers( baseMaps, overlayMaps, {
     collapsed: true
 }).addTo( map);
 
 
-/*--------------------------------
---------EARTHQUAKE LAYER----------
---------------------------------*/
-
 d3.json( earthquakesURL).then( function( earthquakeData) {
 
-    // Sizing for markers
+    
     function markerSize( magnitude) {
         if (magnitude === 0) {
         return 1;
@@ -83,7 +66,6 @@ d3.json( earthquakesURL).then( function( earthquakeData) {
         return magnitude * 4;
     }
 
-    // Color for markers
     function chooseColor( depth) {
         switch( true) {
             case depth > 90:
@@ -101,7 +83,6 @@ d3.json( earthquakesURL).then( function( earthquakeData) {
         }
     }
 
-    // Other marker style properties
     function stylize( feature) {
         return {
             fillColor: chooseColor( feature.geometry.coordinates[2]),
@@ -113,7 +94,6 @@ d3.json( earthquakesURL).then( function( earthquakeData) {
         };
     }
 
-    // Create a GeoJSON layer
     L.geoJson( earthquakeData, {
         pointToLayer: function( feature, latlng) {
             return L.circleMarker( latlng);
@@ -123,44 +103,16 @@ d3.json( earthquakesURL).then( function( earthquakeData) {
             layer.bindPopup( "<h3>Location: " + feature.properties.place + "</h3><hr><p>Date: "
             + new Date( feature.properties.time) + "</p><hr><p>Magnitude: " + feature.properties.mag + "</p>");
         }
-    }).addTo( earthquakes);   // First add to earthquake layer
-    earthquakes.addTo( map);  // Then add layer to map (allows turning on and off)
+    }).addTo( earthquakes);   
+    earthquakes.addTo( map);  
 
-
-/*--------------------------------
-------TECTONIC PLATES LAYER-------
---------------------------------*/
-
-    // Get the tectonic plate data from tectonicplatesURL
     d3.json( tectonicplatesURL).then( function( platesData) {
         L.geoJson(platesData, {
             color: "orange",
             weight: 2
-        }).addTo( tectonicplates);  // First add to tectonicplate layer
-        tectonicplates.addTo(map);  // Then add layer to map (allows turning on and off)
+        }).addTo( tectonicplates);  
+        tectonicplates.addTo(map);  
     });
 
 
-/*--------------------------------
------------MAP LEGEND-------------
---------------------------------*/
-
-    // Add legend
-    var legend = L.control( {position: "bottomleft"});
-    legend.onAdd = function() {
-        var div = L.DomUtil.create( "div", "info legend");
-        // Intervals
-        var depth = [-10, 10, 30, 50, 70, 90];
-        // Title
-        div.innerHTML += "<h3 style='text-align: center'>Depth</h3>"
-        // Color
-        for (var i = 0; i < depth.length; i++) {
-            div.innerHTML 
-                += '<i style="background: ' + chooseColor( depth[i] + 1)
-                + '"></i> ' + depth[i]
-                + (depth[i + 1] ? '&ndash;' + depth[i + 1] + '<br>' : '+');
-        }
-        return div;
-    };
-    legend.addTo(map);
 });
